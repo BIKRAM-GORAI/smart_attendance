@@ -19,6 +19,7 @@
     <h1 class="dashboard-heading">Welcome to the Dashboard</h1>
     <p class="login-role">You're logged in as <span class="role-label">Student</span></p>
 
+    <!-- Dashboard Menu -->
     <div class="dashboard-menu">
       <button class="menu-btn attendance-btn" onclick="location.href='view-attendance.html'">
         <i class="fas fa-calendar-check"></i> View Attendance
@@ -40,6 +41,15 @@
       </button>
     </div>
 
+    <!-- QR Code Section -->
+    <div style="margin-top: 30px; text-align: center;">
+      <button id="viewQRBtn" class="menu-btn qr-btn">
+        <i class="fas fa-qrcode"></i> View My QR Code
+      </button>
+      <div id="qrContainer" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Logout Button -->
     <a href="index.html">
       <button class="logout-btn">
         <i class="fas fa-sign-out-alt"></i> Logout
@@ -47,6 +57,27 @@
     </a>
   </div>
 
+  <!-- Scripts -->
   <script src="js/dashboard-script.js"></script>
+  <script>
+    // Get the logged-in student's ID from localStorage
+    const studentId = localStorage.getItem("studentId");
+
+    document.getElementById("viewQRBtn").addEventListener("click", async () => {
+      if (!studentId) {
+        alert("Student ID not found. Please log in again.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/generate-qr/${studentId}`);
+        const qrHTML = await response.text();
+        document.getElementById("qrContainer").innerHTML = qrHTML;
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load QR code");
+      }
+    });
+  </script>
 </body>
 </html>

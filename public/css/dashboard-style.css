@@ -28,6 +28,7 @@ body {
   animation: fadeIn 0.8s ease-in-out;
 }
 
+
 /* FONTS */
 h1,
 .dashboard-heading {
@@ -302,3 +303,26 @@ body.light-mode .logout-btn {
   border-radius: 6px;
   cursor: pointer;
 }
+.qr-btn {
+  background: #4caf50; /* Green color, or choose one */
+  color: white;
+  padding: 12px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-block; /* Ensures center alignment */
+  margin-top: 20px;
+  transition: background 0.3s;
+}
+
+.qr-btn:hover {
+  background: #45a049;
+}
+/* #qrContainer {
+  margin-top: 20px;
+  display: inline-block;
+  hellllo
+} */
+
+

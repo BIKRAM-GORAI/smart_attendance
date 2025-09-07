@@ -14,12 +14,12 @@
     <form id="loginForm" method="POST" action="/teacher-login">
 
       <div class="input-group">
-        <input type="text" name="teacherId" required>
+        <input type="text" name="teacherId" id="teacherId" required>
         <label>Teacher ID</label>
       </div>
 
       <div class="input-group">
-        <input type="password" name="password" required>
+        <input type="password" name="password" id="password" required>
         <label>Password</label>
       </div>
 
@@ -28,5 +28,6 @@
 
     <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
   </div>
+  <script src="js/teacher-login-script.js"></script>
 </body>
 </html>

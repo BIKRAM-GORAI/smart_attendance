@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scan QR - Mark Attendance</title>
+  <link rel="stylesheet" href="/css/scan-qr.css">
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="/js/scan-qr.js" defer></script>
+</head>
+<body>
+  <div class="scanner-container">
+    <h2>QR Attendance Scanner</h2>
+    <div id="reader" style="width: 400px; margin: auto;"></div>
+
+    <div id="result-box" class="hidden">
+      <h3 id="student-name"></h3>
+      <p id="attendance-msg"></p>
+    </div>
+  </div>
+</body>
+</html>

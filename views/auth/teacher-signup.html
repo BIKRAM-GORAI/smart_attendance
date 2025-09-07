@@ -11,20 +11,20 @@
     <i class="fas fa-chalkboard-teacher login-icon"></i>
     <h2>Teacher Sign-Up</h2>
 
-    <form id="signupForm" method="POST" action="/teacher-signup">
+    <form id="teacherSignupForm" method="POST" action="/teacher-signup">
 
       <div class="input-group">
-        <input type="text" name="fullName" required>
+        <input type="text" id="fullName" name="fullName" required>
         <label>Full Name</label>
       </div>
 
       <div class="input-group">
-        <input type="text" name="teacherId" required>
+        <input type="text" id="teacherId" name="teacherId" required>
         <label>Teacher ID</label>
       </div>
 
       <div class="input-group">
-        <select name="gender" required>
+        <select id="gender" name="gender" required>
           <option value="">Gender</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
@@ -33,18 +33,18 @@
       </div>
 
       <div class="input-group">
-        <input type="text" name="whatsapp" required>
+        <input type="text" id="whatsapp" name="whatsapp" required>
         <label>WhatsApp Number</label>
       </div>
 
       <div class="input-group full-width">
-        <input type="password" name="password" id="password" required oninput="checkPasswordStrength()">
+        <input type="password" id="password" name="password" required oninput="checkPasswordStrength()">
         <label>Password</label>
         <div id="strengthIndicator" style="margin-top: 8px; height: 8px; border-radius: 5px; width: 100%; background-color: #475569;"></div>
       </div>
 
       <div class="input-group full-width">
-        <input type="password" name="confirmPassword" required>
+        <input type="password" id="confirmPassword" name="confirmPassword" required>
         <label>Confirm Password</label>
       </div>
 
@@ -54,6 +54,6 @@
     <p>Already registered? <a href="/teacher-login" class="forgot-link">Login here</a></p>
   </div>
 
-  <script src="js/signup-script.js"></script>
+  <script src="js/teacher-signup-script.js"></script>
 </body>
 </html>

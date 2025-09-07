@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
+const QRCode = require("qrcode");
 const path = require("path");
 
 
@@ -55,6 +56,27 @@ app.get("/forgot-password", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "misc","forgot-password.html"));
 });
 
+// Route to generate QR code for a student
+app.get("/generate-qr/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const student = await Student.findOne({ studentId });
+    if (!student) return res.status(404).send("Student not found");
+
+    // ✅ Full URL to mark attendance
+    const attendanceURL = `http://10.156.245.70/mark-attendance?studentId=${studentId}`;
+
+    // Generate QR code
+    const qrImage = await QRCode.toDataURL(attendanceURL);
+
+    // Send as HTML image
+    res.send(`<img src="${qrImage}" alt="QR Code for ${student.fullName}" />`);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+
 // ----------------- STUDENT -----------------
 // Student model
 const studentSchema = new mongoose.Schema({
@@ -64,24 +86,49 @@ const studentSchema = new mongoose.Schema({
   gender: { type: String, required: true },
   whatsapp: { type: String, required: true },
   password: { type: String, required: true },
-  status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" }
+  status: { 
+    type: String, 
+    enum: ["pending", "approved", "rejected"], 
+    default: "pending" 
+  },
+
+  // ✅ New attendance field
+  attendance: [
+    {
+      date: { type: Date, default: Date.now },
+      status: { type: String, enum: ["present"], default: "present" }
+    }
+  ]
 });
+
 const Student = mongoose.model("Student", studentSchema);
 
 
-app.post("/student-signup", async (req, res) => {          // from signup-script.js
-  try {
-    const { fullName, studentId, dob, gender, whatsapp, password } = req.body;
 
-    // check if student exists
+app.post("/student-signup", async (req, res) => {
+  try {
+    const { fullName, studentId, dob, gender, whatsapp, password, confirmPassword } = req.body;
+
+    // 1️⃣ Check all fields
+    if (!fullName || !studentId || !dob || !gender || !whatsapp || !password || !confirmPassword) {
+      return res.json({ success: false, message: "All fields are required" });
+    }
+
+    // 2️⃣ Password match
+    if (password !== confirmPassword) {
+      return res.json({ success: false, message: "Passwords do not match" });
+    }
+
+    // 3️⃣ Check if student exists
     const existingStudent = await Student.findOne({ studentId });
     if (existingStudent) {
       return res.json({ success: false, message: "Student ID already registered" });
     }
 
-    // hash password
+    // 4️⃣ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 5️⃣ Create student (auto pending)
     const newStudent = new Student({
       fullName,
       studentId,
@@ -89,11 +136,13 @@ app.post("/student-signup", async (req, res) => {          // from signup-script
       gender,
       whatsapp,
       password: hashedPassword,
-      status: "pending"  // automatically pending
+      status: "pending"
     });
 
     await newStudent.save();
-    res.json({ success: true });
+
+    // 6️⃣ Success response
+    res.json({ success: true, message: "Signup successful! Await approval." });
 
   } catch (err) {
     console.error(err);
@@ -118,30 +167,30 @@ app.post("/student-login", async (req, res) => {
     // Find student by ID
     const student = await Student.findOne({ studentId });
     if (!student) {
-      return res.send("Invalid Student ID or Password");
+      return res.json({ success: false, message: "Invalid Student ID or Password" });
     }
 
     // Check if approved
     if (student.status !== "approved") {
-      return res.send("Your account is not approved yet. Please wait for teacher approval.");
+      return res.json({ success: false, message: "Your account is not approved yet. Please wait for teacher approval." });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, student.password);
-    if (!isMatch) return res.send("Invalid Student ID or Password");
+    if (!isMatch) return res.json({ success: false, message: "Invalid Student ID or Password" });
 
-    // Login successful → redirect to student dashboard
-    res.redirect("/student-dashboard");
+    // ✅ Login successful → return JSON with studentId
+    return res.json({ success: true, studentId: student.studentId });
 
   } catch (err) {
     console.error(err);
-    res.send("Server error");
+    return res.json({ success: false, message: "Server error" });
   }
 });
 
 // Student Dashboard page
 app.get("/student-dashboard", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "student-dashboard.html"));
+  res.sendFile(path.join(__dirname, "views","dashboards","student-dashboard.html"));
 });
 
 
@@ -193,21 +242,26 @@ app.post("/teacher-signup", async (req, res) => {
   try {
     const { fullName, teacherId, email, whatsapp, gender, password, confirmPassword } = req.body;
 
+    // 1️⃣ Check all fields
     if (!fullName || !teacherId || !whatsapp || !gender || !password || !confirmPassword) {
-      return res.send("All fields are required");
+      return res.json({ success: false, message: "All fields are required" });
     }
 
+    // 2️⃣ Password match
     if (password !== confirmPassword) {
-      return res.send("Passwords do not match");
+      return res.json({ success: false, message: "Passwords do not match" });
     }
 
+    // 3️⃣ Check if teacher exists
     const existingTeacher = await Teacher.findOne({ teacherId });
     if (existingTeacher) {
-      return res.send("Teacher ID already exists");
+      return res.json({ success: false, message: "Teacher ID already exists" });
     }
 
+    // 4️⃣ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 5️⃣ Create teacher
     const newTeacher = new Teacher({
       fullName,
       teacherId,
@@ -219,10 +273,12 @@ app.post("/teacher-signup", async (req, res) => {
 
     await newTeacher.save();
 
-    res.redirect("/teacher-login");
+    // 6️⃣ Success response
+    res.json({ success: true, message: "Signup successful! Please login." });
+
   } catch (err) {
     console.error(err);
-    res.send("Server error");
+    res.json({ success: false, message: "Server error" });
   }
 });
 
@@ -237,24 +293,28 @@ app.post("/teacher-login", async (req, res) => {
 
     const teacher = await Teacher.findOne({ teacherId });
     if (!teacher) {
-      return res.send("Invalid Teacher ID or Password");
+      return res.json({ success: false, message: "Invalid Teacher ID or Password" });
     }
 
     const isMatch = await bcrypt.compare(password, teacher.password);
-    if (!isMatch) return res.send("Invalid Teacher ID or Password");
+    if (!isMatch) {
+      return res.json({ success: false, message: "Invalid Teacher ID or Password" });
+    }
 
-    // Redirect to teacher dashboard on successful login
-    res.redirect("/teacher-dashboard");
+    // Login successful → redirect to teacher dashboard
+    res.json({ success: true, redirect: "/teacher-dashboard" });
+
   } catch (err) {
     console.error(err);
-    res.send("Server error");
+    res.json({ success: false, message: "Server error" });
   }
 });
 
 // ----------------- TEACHER DASHBOARD -----------------
 app.get("/teacher-dashboard", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "teacher-dashboard.html"));
+  res.sendFile(path.join(__dirname, "views", "dashboards","teacher-dashboard.html"));
 });
+
 
 app.get("/teacher-signup", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "auth", "teacher-signup.html"));
@@ -300,6 +360,57 @@ app.post("/api/reject-student/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
+// ----------------- MARK ATTENDANCE -----------------
+app.post("/mark-attendance", async (req, res) => {
+  try {
+    const { studentId } = req.body;
+
+    if (!studentId) {
+      return res.status(400).json({ success: false, message: "Student ID is required" });
+    }
+
+    const student = await Student.findOne({ studentId });
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    // Get today's date (ignoring time)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check if already marked today
+    const alreadyMarked = student.attendance.some(att => {
+      const attDate = new Date(att.date);
+      attDate.setHours(0, 0, 0, 0);
+      return attDate.getTime() === today.getTime();
+    });
+
+    if (alreadyMarked) {
+      return res.json({
+        success: false,
+        message: `${student.fullName} has already marked attendance today.`
+      });
+    }
+
+    // Save attendance
+    student.attendance.push({ date: today, status: "present" });
+
+    await student.save();
+
+    res.json({
+      success: true,
+      message: `Attendance marked for ${student.fullName}`,
+      name: student.fullName
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 
 
 // ----------------- ADMIN -----------------
