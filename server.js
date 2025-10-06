@@ -15,7 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // connect to MongoDB
-mongoose.connect("mongodb://127.0.0.1:27017/attendance", {
+// mongoose.connect("mongodb://127.0.0.1:27017/attendance", {
+mongoose.connect("mongodb+srv://codeserve:codeserve%40776@cluster0.x3zycul.mongodb.net/attendance?retryWrites=true&w=majority&appName=Cluster0", {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log("MongoDB connected"))
